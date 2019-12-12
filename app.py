@@ -123,26 +123,24 @@ app.layout = html.Div([
     dcc.Loading(id="loading-1",
             children=[ 
                 html.Div(id='dd-output-container'), 
-                
                 html.Div([
                     html.Div([
                         dcc.Graph(id='g1')
-                    ], className="six columns"),
-            
+                    ],style={"width":"45%"},className="six columns"),
                     html.Div([
                         dcc.Graph(id='g2')
-                    ], className="six columns"),
+                    ],style={"width":"45%"},className="six columns"),
                 ], className="row"),
-            
+
                 html.Div([
                     html.Div([
                         dcc.Graph(id='g3')
-                    ], className="six columns"),
-            
+                    ],style={"width":"45%"},className="six columns"),            
                     html.Div([
                         dcc.Graph(id='g4')
-                    ], className="six columns"),
+                    ],style={"width":"45%"},className="six columns"),
                 ], className="row"),
+
                       html.Div([
     dcc.Dropdown(style={'width':'500px'},
         id = 'dropdown-to-show_or_hide-element',
