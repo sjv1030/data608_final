@@ -2,38 +2,37 @@
 """
 Created on Thu Nov 28 08:21:16 2019
 
-@author: sjv1030_hp
+@author: Silverio J. Vasquez
 """
 
+# Import the necessary Python packages
 
 import dash
 import dash_core_components as dcc
-#import dash_table as dt
 import dash_html_components as html
 import pandas as pd
-import numpy as np
 import statsmodels.api as sm
 import statsmodels.stats.api as sms
+import plotly.graph_objs as go
 
 from dash.dependencies import Output, Input, State
 from dash.exceptions import PreventUpdate
-
 from fredapi import Fred
 
-import plotly.graph_objs as go
-
+# Initiate Dash
 app = dash.Dash(__name__)
+
+# Assign the app.server for deployoment on Heroku
 server = app.server
-                
+
+# Unique ID for the Fred website to pull data                
 fred = Fred(api_key='0d3a129121b29e16035b20ea3947ecf5')
 
+# Pull economic data from Fred
 gdp = fred.get_series('GDPC1')
 inf = fred.get_series('PCEPILFE')
 isratio = fred.get_series('ISRATIO')
 lei = fred.get_series('USALOLITONOSTSAM')
-
-infyy = inf.pct_change(12)*100
-gdpyy = gdp.pct_change(4)*100
 spx = fred.get_series('SP500')
 wti = fred.get_series('WTISPLC')
 yc = fred.get_series('T10Y2YM')
@@ -42,18 +41,21 @@ unrate = fred.get_series('UNRATE')
 ahe = fred.get_series('AHETPI')
 hhdebt = fred.get_series('TDSP')
 pce = fred.get_series('PCE')
-
-pceyy = pce.pct_change(12)*100
-aheyy = ahe.pct_change(12)*100
 mtg = fred.get_series('MORTGAGE30US')
 hpi = fred.get_series('SPCS20RSA')
 sales = fred.get_series('HSN1F')
 starts = fred.get_series('HOUST')
 
+# Transform data as necessary
+infyy = inf.pct_change(12)*100
+gdpyy = gdp.pct_change(4)*100
+pceyy = pce.pct_change(12)*100
+aheyy = ahe.pct_change(12)*100
 hpiyy = hpi.pct_change(12)*100
 salesyy = sales.pct_change(12)*100
 startsyy = starts.pct_change(12)*100
         
+# Create a dictionary to store all the variables that will be used later
 database = {
         'gdpyy':gdpyy,
         'infyy':infyy,
@@ -71,9 +73,9 @@ database = {
         'hpiyy':hpiyy,
         'salesyy':salesyy,
         'startsyy':startsyy
-        }
+}
 
-
+# Function to create a table in HTML
 def generate_table(dataframe, max_rows=10):
     return html.Table(
         # Header
@@ -104,13 +106,14 @@ by performing a simple, contemporaneous regression.
 '''
 
 app.layout = html.Div([   
+    # The first HTML property is the website's heading
     html.H2(children='Silverio J. Vasquez - Data 608 - Final Project'),  
     
+    # The Div holds introductory text and has a dropdown for the user
     html.Div(children=[
             html.H3(children='Overview'),
             dcc.Markdown(children=intro),  
     ]), 
-    
     dcc.Dropdown(style={'width':'500px'},id='data-dropdown', 
         options=[
         {'label': 'Macro', 'value': 'macro'},
@@ -119,10 +122,14 @@ app.layout = html.Div([
         {'label': 'Housing', 'value': 'housing'}
         ], value='macro',
     ),
+    
     html.Br(),
+    # Dash has a dcc.Loading function that displays a loading image on the site
     dcc.Loading(id="loading-1",
             children=[ 
                 html.Div(id='dd-output-container'), 
+                # This Div holds the first row of charts
+                # Each chart has an unique id for the call back
                 html.Div([
                     html.Div([
                         dcc.Graph(id='g1')
@@ -131,7 +138,8 @@ app.layout = html.Div([
                         dcc.Graph(id='g2')
                     ],style={"width":"45%"},className="six columns"),
                 ], className="row"),
-
+            # This Div holds the second row of charts
+            # Each chart has an unique id for the call back
                 html.Div([
                     html.Div([
                         dcc.Graph(id='g3')
@@ -140,8 +148,10 @@ app.layout = html.Div([
                         dcc.Graph(id='g4')
                     ],style={"width":"45%"},className="six columns"),
                 ], className="row"),
-
-                      html.Div([
+        
+            html.Div([
+    # The dropdown below has two values - one to display the hidden div
+    # and another to keep the div hidden
     dcc.Dropdown(style={'width':'500px'},
         id = 'dropdown-to-show_or_hide-element',
         options=[
@@ -152,7 +162,7 @@ app.layout = html.Div([
     ),html.P('Above is a dropdown to select further functionality, \
                i.e., an ordinary least-squares regression.'),
 
-    # Create Div to place a conditionally visible element inside
+    # Below is the Div that will change visibility
     html.Div([
         html.Br(),
         html.P('Select variables to create a contemporaneous regression. \
@@ -182,23 +192,29 @@ app.layout = html.Div([
         html.Div([],id='regression-output'),
         html.Br(),
         html.Br()
-    ], id = 'element-to-hide', style= {'display': 'none'}), # <-- This is the line that will be changed by the dropdown callback
-    
-    ])     
-            ])
+    ], 
+    # The line below will be changed by the dropdown callback
+    # the style property will be changed by the function
+    # "show_hide_element
+    id = 'element-to-hide', style= {'display': 'none'}), 
+        ])     
+   ])
       
 ], style={'width': '90%', 'display': 'inline-block', 'vertical-align': 'middle'})
     
+# All the callback functions are executed at the same time, so the order doesn't matter
 @app.callback(
    Output(component_id='element-to-hide', component_property='style'),
    [Input(component_id='dropdown-to-show_or_hide-element', component_property='value')])
 
+# The function below returns a value that changes the CSS display property
 def show_hide_element(visibility_state):
     if visibility_state == 'on':
         return {'display': 'block'}
     if visibility_state == 'off':
         return {'display': 'none'}
 
+# The function below returns all the regression information
 @app.callback(
    [Output(component_id='regression-output-header', component_property='children'),
     Output('regression-output','children'),
@@ -206,6 +222,8 @@ def show_hide_element(visibility_state):
     [Input(component_id='button',component_property='n_clicks')],
     [State('regression','value')])    
 
+# While there isn't a button available that triggers an action
+# there is a work around in Dash using the "n_clicks" property
 def show_regression(n_clicks,value):
     if value is None:
         raise PreventUpdate
@@ -215,21 +233,25 @@ def show_regression(n_clicks,value):
         reg_df = pd.DataFrame(database[value[0]])
         for i in range(1,len(value)):
             reg_df = pd.concat([reg_df,pd.DataFrame(database[value[i]])],axis=1)    
-        reg_df.columns = value
-        reg_df.dropna(inplace=True)
-        y = reg_df[value[0]]
-        x = reg_df[value[1:]]
-        X = sm.add_constant(x)
+        reg_df.columns = value # add column names
+        reg_df.dropna(inplace=True) # drop NAs
+        y = reg_df[value[0]] # extract the dependent variable
+        x = reg_df[value[1:]] # extract the independent variables
+        X = sm.add_constant(x) # add a constant
+        
+        # Create OLS regression
         model = sm.OLS(y,X).fit(cov_type='HC3')
         
+        # Extract various OLS regression summary statistics
         model_df1 = pd.DataFrame(
                 {'nobs':model.nobs,
                  'Adj_R-square':round(model.rsquared_adj,3),
                  'DW_test':round(sms.durbin_watson(model.resid),3)
                  },index=[0])             
         
+        # Give name to row in table
         names = ['constant'] + value[1:]
-
+        # Fill out the rest of the table to be displayed
         model_df2 = pd.DataFrame.from_dict(
                 {
                  'regressors':names,
@@ -248,9 +270,10 @@ def show_regression(n_clicks,value):
            '''
         return generate_table(model_df1),generate_table(model_df2),explanation
         
-def _replace_tags(html):
-    return html.replace('<table><td>','html.Table([html.Tr(')
-    
+#def _replace_tags(html):
+#    return html.replace('<table><td>','html.Table([html.Tr(')
+
+# This callback function outputs the first table and fills all 4 charts    
 @app.callback([
     Output('dd-output-container','children'),
     Output('g1','figure'),
@@ -259,19 +282,24 @@ def _replace_tags(html):
     Output('g4','figure')
 ], [Input('data-dropdown', 'value')])
 
+# This function returns multiple outputs    
 def multi_output(value):
+    # Below prevents Dash from updating without an values being passed
     if value is None:
         raise PreventUpdate
     
+    # get data from dictionary
     series_list = list(_get_data(value))
     series_list_ = [_clip(x) for x in series_list]
     series1 = series_list_[0]
     series2 = series_list_[1]
     series3 = series_list_[2]
     series4 = series_list_[3]
-                                
+    
+    # Here, the table is created for the requested category                            
     table = _make_table(series1,series2,series3,series4,value)
     
+    # The plots are then filled with requested data using Plotly charts
     figure1 = go.Figure(
                 [go.Scatter(x=series1.loc['2000'::].index, y=series1.loc['2000'::].values)])
     figure1.update_layout(title_text=table['Indicator'][0],xaxis_rangeslider_visible=True)
@@ -290,6 +318,9 @@ def multi_output(value):
     
     return generate_table(table), figure1, figure2, figure3, figure4
 
+# Below are a series of helper functions
+
+# This function returns the specific series based on the user's dropdown selection 
 def _get_data(value):
     if value == 'macro':
         return database['gdpyy'], database['infyy'], database['isratio'], database['lei']
@@ -303,7 +334,7 @@ def _get_data(value):
     else:
         return database['mtg'], database['hpiyy'], database['salesyy'], database['startsyy']
         
-    
+# This function takes 4 series and a category to return the values for the 1st table    
 def _make_table(x1,x2,x3,x4,key='macro'):
     if key == 'macro':
         _dict = {
@@ -336,6 +367,7 @@ def _make_table(x1,x2,x3,x4,key='macro'):
         
     return _make_df(_dict)
 
+# This function makes a dataframe from a dictionary
 def _make_df(d):
     new_dict = d    
     df = pd.DataFrame(columns=['Latest','Minimum','Maximum','Z-Score'])
@@ -345,12 +377,14 @@ def _make_df(d):
     df.columns = ['Indicator','Minimum','Maximum','Latest','Z-Score']
     return df
 
-
+# This function returns a Winsorized series removing outliers 
+# below 5% and above 95% of all observations
 def _clip(series):
     _series = pd.Series(series)
-    return _series.clip(lower=_series.quantile(0.1),
-                       upper=_series.quantile(0.9))
+    return _series.clip(lower=_series.quantile(0.05),
+                       upper=_series.quantile(0.95))
 
+# The functions below return specific values/calculations 
 def _latest(series):
     return round(series.iloc[-1],3)
 def _min(series):
