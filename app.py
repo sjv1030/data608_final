@@ -95,7 +95,7 @@ for the chosen type. The plots are meant to be displayed as a small multiple,
 but the plots are also interactive to allow the user to zoom, pan, etc.
 
 The table below shows the values for the latest, minimum, maximum, and z-scores.
-NAs are dropped and the data series were Winsorized to the bottom 10% and top 90%, 
+NAs are dropped and the data series were Winsorized to the bottom 5% and top 95%, 
 to remove outliers.
 
 The intended user of this interactive tool is an economsit, financial analyst,
